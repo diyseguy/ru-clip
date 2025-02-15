@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from huggingface_hub import hf_hub_url, cached_download
+from huggingface_hub import hf_hub_url, hf_hub_download
 
 from . import model, processor, predictor
 from .model import CLIP
@@ -69,10 +69,19 @@ def load(name, device='cpu', cache_dir='/tmp/ruclip', use_auth_token=None):
     config = MODELS[name]
     repo_id = config['repo_id']
     cache_dir = os.path.join(cache_dir, name)
+    #
     for filename in config['filenames']:
         config_file_url = hf_hub_url(repo_id=repo_id, filename=f'{filename}')
-        cached_download(config_file_url, cache_dir=cache_dir, force_filename=filename, use_auth_token=use_auth_token)
+        try:
+            hf_hub_download(repo_id, cache_dir=cache_dir, filename=filename)
+        except Exception as ex:
+            print(ex)
+            raise ex
 
+        foo = 1
+        #'https://huggingface.co/ai-forever/ruclip-vit-base-patch32-384/resolve/main/bpe.model'
+        # 'https://huggingface.co/ai-forever/ruclip-vit-base-patch32-384/resolve/main/config.json' cached_download(config_file_url, cache_dir=cache_dir, force_filename=filename, use_auth_token=use_auth_token)
+        # 'https://huggingface.co/ai-forever/ruclip-vit-base-patch32-384/resolve/main/pytorch_model.bin'
     clip = CLIP.from_pretrained(cache_dir).eval().to(device)
     clip_processor = RuCLIPProcessor.from_pretrained(cache_dir)
     return clip, clip_processor
